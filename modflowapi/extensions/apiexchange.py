@@ -1,5 +1,4 @@
 from .apimodel import ApiMbase
-from .pakbase import ListPackage
 
 
 class ApiExchange(ApiMbase):
@@ -15,10 +14,7 @@ class ApiExchange(ApiMbase):
         modflow exchange name. ex. "GWF-GWF_1"
     """
 
+    sim_level = True  # exchange packages are simulation-level, not model-level
+
     def __init__(self, mf6, name):
-        pkg_types = {
-            "gwf-gwf": ListPackage,
-            "gwt-gwt": ListPackage,
-            "gwe-gwe": ListPackage,
-        }
-        super().__init__(mf6, name, pkg_types)
+        super().__init__(mf6, name)

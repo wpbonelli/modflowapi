@@ -7,7 +7,8 @@ import pytest
 from modflow_devtools.misc import set_dir
 
 from modflowapi import Callbacks, ModflowApi, run_simulation
-from modflowapi.extensions.pakbase import AdvancedPackage, ArrayPackage, ListPackage
+from modflowapi.extensions.apiexchange import ApiExchange
+from modflowapi.extensions.pakbase import AdvancedPackage, ArrayPackage, ListPackage, Package
 
 data_pth = Path("../docs/examples/data")
 pytestmark = pytest.mark.extensions
@@ -71,14 +72,20 @@ def test_dis_model(function_tmpdir):
                 raise AssertionError("ApiModel has advanced prior to initialization callback")
 
             dis = model.dis
+            if "idomain" not in dis.variable_names:
+                raise TypeError("DIS package should have grid array variables")
             if not isinstance(dis, ArrayPackage):
                 raise TypeError("DIS package has incorrect base class type")
 
             wel = model.wel
+            if wel.stress_period_data is None:
+                raise TypeError("WEL package should have stress period data")
             if not isinstance(wel, ListPackage):
                 raise TypeError("WEL package has incorrect base class type")
 
             gnc = model.gnc
+            if not isinstance(gnc, Package):
+                raise TypeError("GNC package has incorrect type")
             if not isinstance(gnc, AdvancedPackage):
                 raise TypeError("GNC package has incorrect base class type")
 
@@ -158,14 +165,20 @@ def test_disv_model(function_tmpdir):
                 raise AssertionError("ApiModel has advanced prior to initialization callback")
 
             dis = model.dis
+            if "idomain" not in dis.variable_names:
+                raise TypeError("DIS package should have grid array variables")
             if not isinstance(dis, ArrayPackage):
                 raise TypeError("DIS package has incorrect base class type")
 
             chd = model.chd_left
+            if chd.stress_period_data is None:
+                raise TypeError("CHD package should have stress period data")
             if not isinstance(chd, ListPackage):
                 raise TypeError("CHD package has incorrect base class type")
 
             hfb = model.hfb
+            if not isinstance(hfb, Package):
+                raise TypeError("HFB package has incorrect type")
             if not isinstance(hfb, AdvancedPackage):
                 raise TypeError("HFB package has incorrect base class type")
 
@@ -236,14 +249,20 @@ def test_disu_model(function_tmpdir):
                 raise AssertionError("ApiModel has advanced prior to initialization callback")
 
             dis = model.dis
+            if "idomain" not in dis.variable_names:
+                raise TypeError("DIS package should have grid array variables")
             if not isinstance(dis, ArrayPackage):
                 raise TypeError("DIS package has incorrect base class type")
 
             rch = model.rch
+            if rch.stress_period_data is None:
+                raise TypeError("RCH package should have stress period data")
             if not isinstance(rch, ListPackage):
                 raise TypeError("RCH package has incorrect base class type")
 
             mvr = model.mvr
+            if not isinstance(mvr, Package):
+                raise TypeError("MVR package has incorrect type")
             if not isinstance(mvr, AdvancedPackage):
                 raise TypeError("MVR package has incorrect base class type")
 
@@ -292,6 +311,25 @@ def test_two_models(function_tmpdir):
         if step == Callbacks.initialize:
             if len(sim.models) != 2:
                 raise AssertionError("Invalid number of models")
+
+            if len(sim.exchange_names) != 1:
+                raise AssertionError("Exchanges were not constructed for this simulation")
+
+            exchange = sim.get_exchange()
+            if not isinstance(exchange, ApiExchange):
+                raise TypeError("get_exchange() should return an ApiExchange object")
+
+            gwf_gwf = exchange.get_package(sim.exchange_names[0])
+            if not isinstance(gwf_gwf, ListPackage):
+                raise TypeError("GWF-GWF exchange package has incorrect base class type")
+
+            gnc = exchange.get_package("gnc")
+            if not isinstance(gnc, AdvancedPackage):
+                raise TypeError("GNC package has incorrect base class type")
+
+            mvr = exchange.get_package("mvr")
+            if not isinstance(mvr, AdvancedPackage):
+                raise TypeError("MVR package has incorrect base class type")
 
     name = "two_models"
     sim_pth = data_pth / name
